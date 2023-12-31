@@ -14,11 +14,11 @@ namespace TUOScripts
     {
         #region Configuration
         private static TimeSpan delay = TimeSpan.FromSeconds(0.2);     //Time to wait in the loop, do not set to 0
-        private static HealType healType = HealType.GreaterHealMagery;                //Bandage healing?
+        private static HealType healType = HealType.Bandage;                //Bandage healing?
         private static int hitsOffset = 10;                                 //Wait until 10 hits are missing until starting to heal
         private static TimeSpan bandageWait = TimeSpan.FromSeconds(12);     //How long to wait before using another bandage
         private static TimeSpan greaterHealWait = TimeSpan.FromSeconds(8);     //How long to wait before using greater heal again
-        private static bool enabled = true;
+        private static bool enabled = false;
         #endregion
 
         public static AdvancedHealer Instance { get; private set; }
@@ -35,6 +35,27 @@ namespace TUOScripts
 
             //Wait for the player to login
             EventSink.OnConnected += EventSink_OnConnected;
+            EventSink.OnDisconnected += EventSink_OnDisconnected;
+        }
+
+        private static void EventSink_OnDisconnected(object sender, EventArgs e)
+        {
+            enabled = false;
+            Instance = null;
+        }
+
+        private static void EventSink_OnConnected(object sender, EventArgs eventarg)
+        {
+            CommandManager.Register("autoheal", (e) => { 
+                enabled = !enabled; 
+
+                GameActions.Print($"Autohealer {(enabled ? "enabled" : "disabled")}.", 61); 
+
+                if(enabled)
+                {
+                    Instance = new AdvancedHealer();
+                }
+            });
 
             CommandManager.Register("sethealtype", (e) =>
             {
@@ -50,13 +71,11 @@ namespace TUOScripts
                 }
             });
 
-            CommandManager.Register("autoheal", (e) => { enabled = !enabled; });
-        }
-
-        private static void EventSink_OnConnected(object sender, EventArgs e)
-        {
-            //Set the current instance of this class.
-            Instance = new AdvancedHealer();
+            if (enabled)
+            {
+                //Set the current instance of this class.
+                Instance = new AdvancedHealer();
+            }
         }
 
         public AdvancedHealer()
@@ -67,8 +86,7 @@ namespace TUOScripts
                 {
                     if (!enabled)
                     {
-                        Task.Delay(delay + delay).Wait();
-                        continue;
+                        return;
                     }
 
                     if (healType == HealType.Bandage)
