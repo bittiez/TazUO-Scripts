@@ -31,7 +31,7 @@ namespace TUOScripts
                 return false;
             }
 
-            TargetManager.SetTargeting(CursorTarget.Object, CursorType.Target, TargetType.Neutral);
+            TargetManager.SetTargeting(CursorTarget.Internal, CursorType.Target, TargetType.Neutral);
 
             Task.Factory.StartNew(() =>
             {
